@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>智能驾驶芯片产业白皮书</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="面向芯片从业者的智驾SoC全景研究报告 — 涵盖产业格局、微架构解析与商业战略">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta name="theme-color" content="#1a73e8">
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' fill='%231a73e8'>S</text></svg>">
+  <!-- Docsify Theme -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ================================================================
+       🎨 CSS VARIABLES
+    ================================================================ */
+    :root {
+      --theme-color: #0071e3;
+      --theme-color-dark: #0077ED;
+      --theme-color-light: #e5f0ff;
+      --secondary-color: #34c759;
+      --warning-color: #ff9f0a;
+      --danger-color: #ff3b30;
+      --purple-color: #af52de;
+      --teal-color: #5ac8fa;
+      --text-primary: #1d1d1f;
+      --text-secondary: #86868b;
+      --bg-primary: #f5f5f7;
+      --bg-card: #ffffff;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
+      --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --sidebar-bg: rgba(255,255,255,0.72);
+      --sidebar-width: 260px;
+    }
+
+    /* Dark mode variables */
+    [data-theme="dark"] {
+      --text-primary: #f5f5f7;
+      --text-secondary: #98989d;
+      --bg-primary: #000000;
+      --bg-card: #1c1c1e;
+      --theme-color-light: #0a2540;
+      --sidebar-bg: rgba(28,28,30,0.85);
+    }
+
+    /* ================================================================
+       📄 BODY & LAYOUT
+    ================================================================ */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Noto Sans SC', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ================================================================
+       📊 READING PROGRESS BAR
+    ================================================================ */
+    .reading-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0%;
+      height: 3px;
+      background: linear-gradient(90deg, var(--theme-color), var(--purple-color), var(--secondary-color));
+      z-index: 99999;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 8px rgba(26,115,232,0.4);
+    }
+
+    /* ================================================================
+       ⬆ BACK TO TOP BUTTON
+    ================================================================ */
+    .back-to-top {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--theme-color), var(--theme-color-dark));
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: var(--shadow-lg);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+    .back-to-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .back-to-top:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(26,115,232,0.4);
+    }
+
+    /* ================================================================
+       🌙 DARK MODE TOGGLE
+    ================================================================ */
+    .theme-toggle {
+      position: fixed;
+      bottom: 32px;
+      right: 84px;
+      width: 44px;
+      height: 44px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid #e5e7eb;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: var(--shadow-md);
+      z-index: 9999;
+      transition: all 0.3s ease;
+    }
+    .theme-toggle:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+    [data-theme="dark"] .theme-toggle {
+      background: #334155;
+      border-color: #475569;
+    }
+
+    /* ================================================================
+       ⏳ LOADING SCREEN
+    ================================================================ */
+    .loading-screen {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0f172a, #1e3a5f);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999999;
+      transition: opacity 0.5s ease;
+    }
+    .loading-screen.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .loading-icon {
+      font-size: 3rem;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .loading-text {
+      color: #94a3b8;
+      margin-top: 16px;
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+    }
+    .loading-bar {
+      width: 120px;
+      height: 3px;
+      background: #334155;
+      border-radius: 3px;
+      margin-top: 20px;
+      overflow: hidden;
+    }
+    .loading-bar-inner {
+      height: 100%;
+      background: linear-gradient(90deg, var(--theme-color), #60a5fa);
+      border-radius: 3px;
+      animation: loadingSlide 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+    @keyframes loadingSlide {
+      0% { width: 0%; margin-left: 0; }
+      50% { width: 60%; margin-left: 20%; }
+      100% { width: 0%; margin-left: 100%; }
+    }
+
+    /* ================================================================
+       📚 SIDEBAR
+    ================================================================ */
+    .sidebar {
+      background: var(--sidebar-bg);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      color: var(--text-primary);
+      border-right: 1px solid rgba(0,0,0,0.06);
+      box-shadow: none;
+      width: var(--sidebar-width);
+      padding-top: 0 !important;
+    }
+    .sidebar > h1 {
+      color: var(--text-primary);
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 20px 16px 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar > h1 a {
+      color: var(--text-primary);
+    }
+    .sidebar ul li a {
+      color: var(--text-secondary);
+      font-size: 0.86rem;
+      transition: all 0.2s;
+      padding: 6px 16px;
+      border-radius: 8px;
+      margin: 1px 8px;
+    }
+    .sidebar ul li a:hover {
+      color: var(--theme-color);
+      background: rgba(0,113,227,0.06);
+    }
+    .sidebar ul li.active > a {
+      color: var(--theme-color);
+      background: rgba(0,113,227,0.08);
+      font-weight: 600;
+      border-right: none;
+    }
+    .sidebar ul li {
+      padding: 0;
+    }
+    .sidebar ul li > p {
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 20px;
+      padding: 8px 16px 4px;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    .sidebar-nav {
+      padding-bottom: 24px;
+      overflow-y: auto;
+    }
+    .sidebar-nav > ul {
+      padding-bottom: 20px;
+    }
+
+    /* ================================================================
+       📝 MAIN CONTENT
+    ================================================================ */
+    .content {
+      padding-top: 20px;
+    }
+    .markdown-section {
+      max-width: 920px;
+      margin: 20px auto;
+      padding: 40px 48px;
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      line-height: 1.8;
+    }
+    [data-theme="dark"] .markdown-section {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    /* ================================================================
+       ✏️ TYPOGRAPHY
+    ================================================================ */
+    .markdown-section h1 {
+      color: var(--text-primary);
+      font-size: 2rem;
+      font-weight: 700;
+      border-bottom: 3px solid var(--theme-color);
+      padding-bottom: 12px;
+      margin: 0 0 24px;
+      position: relative;
+    }
+    .markdown-section h2 {
+      color: var(--text-primary);
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-top: 40px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .markdown-section h3 {
+      color: var(--theme-color);
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-top: 28px;
+    }
+    .markdown-section h4 {
+      color: var(--text-primary);
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .markdown-section p {
+      color: var(--text-primary);
+      margin: 12px 0;
+    }
+    .markdown-section strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    /* ================================================================
+       🔗 LINKS
+    ================================================================ */
+    .markdown-section a {
+      color: var(--theme-color);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    .markdown-section a:hover {
+      border-bottom-color: var(--theme-color);
+    }
+
+    /* ================================================================
+       📊 TABLES
+    ================================================================ */
+    .markdown-section table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin: 16px 0;
+      font-size: 0.9rem;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .markdown-section table thead {
+      background: #f5f5f7;
+    }
+    [data-theme="dark"] .markdown-section table thead {
+      background: #2c2c2e;
+    }
+    .markdown-section table thead th {
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 12px 14px;
+      text-align: left;
+      border: none;
+      border-bottom: 2px solid #e5e7eb;
+      font-size: 0.82rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .markdown-section table tbody tr {
+      transition: background 0.15s;
+    }
+    .markdown-section table tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    [data-theme="dark"] .markdown-section table tbody tr:nth-child(even) {
+      background: #1e293b;
+    }
+    .markdown-section table tbody tr:hover {
+      background: var(--theme-color-light);
+    }
+    .markdown-section table tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #e5e7eb;
+      color: var(--text-primary);
+    }
+    [data-theme="dark"] .markdown-section table tbody td {
+      border-bottom-color: #334155;
+    }
+    .markdown-section table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ================================================================
+       💻 CODE BLOCKS
+    ================================================================ */
+    .markdown-section pre {
+      background: #1e293b;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid #334155;
+      position: relative;
+    }
+    .markdown-section pre > code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    .markdown-section code {
+      font-family: 'JetBrains Mono', monospace;
+      background: #f1f5f9;
+      color: var(--theme-color-dark);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.88em;
+    }
+    [data-theme="dark"] .markdown-section code {
+      background: #334155;
+      color: #60a5fa;
+    }
+
+    /* ================================================================
+       💬 BLOCKQUOTES (CALLOUTS)
+    ================================================================ */
+    .markdown-section blockquote {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      border-left: 4px solid var(--theme-color);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 16px 20px;
+      margin: 16px 0;
+      color: var(--text-primary);
+    }
+    .markdown-section blockquote p {
+      margin: 4px 0;
+    }
+
+    /* ================================================================
+       ➖ HORIZONTAL RULE
+    ================================================================ */
+    .markdown-section hr {
+      border: none;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #d1d5db, transparent);
+      margin: 32px 0;
+    }
+
+    /* ================================================================
+       🖼 IMAGES
+    ================================================================ */
+    .markdown-section img {
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      max-width: 100%;
+      margin: 16px 0;
+      transition: transform 0.3s;
+    }
+    .markdown-section img:hover {
+      transform: scale(1.02);
+    }
+
+    /* ================================================================
+       📋 LISTS
+    ================================================================ */
+    .markdown-section ul, .markdown-section ol {
+      padding-left: 24px;
+    }
+    .markdown-section li {
+      margin: 6px 0;
+    }
+
+    /* ================================================================
+       🎯 COVER PAGE
+    ================================================================ */
+    .cover {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1a73e8 100%) !important;
+      color: #fff !important;
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Animated grid overlay on cover */
+    .cover::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(96,165,250,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96,165,250,0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      animation: gridMove 20s linear infinite;
+    }
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(50px, 50px); }
+    }
+    /* Glow effect */
+    .cover::after {
+      content: '';
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(96,165,250,0.15), transparent 70%);
+      top: -100px;
+      right: -100px;
+      border-radius: 50%;
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+    @keyframes glowPulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.2); opacity: 0.8; }
+    }
+    .cover .cover-main {
+      position: relative;
+      z-index: 1;
+    }
+    .cover .cover-main > h1 {
+      color: #fff !important;
+      font-size: 2.8rem;
+      font-weight: 700;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      border: none !important;
+    }
+    .cover .cover-main > h1 span {
+      color: #60a5fa !important;
+    }
+    .cover .cover-main > blockquote {
+      background: rgba(255,255,255,0.08);
+      border-left: 4px solid #60a5fa;
+      backdrop-filter: blur(10px);
+      border-radius: 0 8px 8px 0;
+      color: #e2e8f0;
+      font-size: 1.1rem;
+    }
+    .cover .cover-main > p {
+      color: #94a3b8;
+    }
+    .cover .cover-main > ul {
+      list-style: none;
+      padding: 0;
+    }
+    .cover .cover-main > ul li {
+      color: #cbd5e1;
+      font-size: 1rem;
+      padding: 4px 0;
+    }
+    .cover a {
+      color: #60a5fa !important;
+      border: 1px solid #60a5fa;
+      padding: 10px 28px;
+      border-radius: 25px;
+      font-weight: 500;
+      transition: all 0.3s;
+      display: inline-block;
+      margin-top: 16px;
+      text-decoration: none;
+    }
+    .cover a:hover {
+      background: #60a5fa;
+      color: #fff !important;
+      text-decoration: none;
+      box-shadow: 0 4px 20px rgba(96,165,250,0.4);
+    }
+
+    /* ================================================================
+       🔄 PAGINATION
+    ================================================================ */
+    .docsify-pagination-container {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #e5e7eb;
+    }
+    .pagination-item {
+      flex: 1;
+      max-width: 48%;
+    }
+    .pagination-item a {
+      display: block;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border-radius: var(--radius-sm);
+      border: 1px solid #e5e7eb;
+      transition: all 0.2s;
+    }
+    .pagination-item a:hover {
+      border-color: var(--theme-color);
+      background: var(--theme-color-light);
+      text-decoration: none;
+    }
+    .pagination-item-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .pagination-item-title {
+      font-weight: 600;
+      color: var(--theme-color);
+      margin-top: 4px;
+    }
+    .pagination-item--next {
+      text-align: right;
+    }
+
+    /* ================================================================
+       📑 CHAPTER NAV CARDS
+    ================================================================ */
+    .chapter-nav {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 24px 0;
+    }
+    .chapter-nav a {
+      display: block;
+      padding: 16px;
+      background: linear-gradient(135deg, #f8fafc, #fff);
+      border: 1px solid #e5e7eb;
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      transition: all 0.25s;
+      box-shadow: var(--shadow-sm);
+    }
+    .chapter-nav a:hover {
+      border-color: var(--theme-color);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .chapter-nav a .nav-icon {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+    .chapter-nav a .nav-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+    }
+    .chapter-nav a .nav-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* ================================================================
+       🏷️ BADGES
+    ================================================================ */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .badge-blue { background: #dbeafe; color: #1d4ed8; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-yellow { background: #fef3c7; color: #92400e; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-purple { background: #ede9fe; color: #6d28d9; }
+    .badge-teal { background: #ccfbf1; color: #0f766e; }
+
+    /* ================================================================
+       📢 CALLOUTS
+    ================================================================ */
+    .callout {
+      padding: 16px 20px;
+      border-radius: var(--radius-sm);
+      margin: 16px 0;
+    }
+    .callout-insight {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      border-left: 4px solid var(--theme-color);
+    }
+    .callout-warning {
+      background: linear-gradient(135deg, #fffbeb, #fef3c7);
+      border-left: 4px solid var(--warning-color);
+    }
+    .callout-success {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border-left: 4px solid var(--secondary-color);
+    }
+    .callout-danger {
+      background: linear-gradient(135deg, #fef2f2, #fee2e2);
+      border-left: 4px solid var(--danger-color);
+    }
+
+    /* ================================================================
+       📈 STAT CARDS
+    ================================================================ */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #f8fafc, #fff);
+      border: 1px solid #e5e7eb;
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--theme-color);
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* ================================================================
+       🔬 MERMAID CONTAINER
+    ================================================================ */
+    .mermaid-container {
+      text-align: center;
+      margin: 24px auto;
+      padding: 16px;
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border-radius: var(--radius-md);
+      border: 1px solid #e2e8f0;
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto;
+      max-width: 100%;
+    }
+    .mermaid-container svg {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* Fix CJK text in mermaid nodes */
+    .mermaid-container .nodeLabel,
+    .mermaid-container .label {
+      font-family: 'Inter', 'Noto Sans SC', sans-serif !important;
+      line-height: 1.5 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      text-align: center !important;
+    }
+    .mermaid-container .edgeLabel {
+      font-size: 12px !important;
+      background: #fff !important;
+      padding: 2px 6px !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+    }
+    .mermaid-container .node rect,
+    .mermaid-container .node polygon,
+    .mermaid-container .node circle {
+      min-width: 80px;
+    }
+    [data-theme="dark"] .mermaid-container .edgeLabel {
+      background: #1c1c1e !important;
+    }
+
+    /* ================================================================
+       🃏 COMPARISON CARDS
+    ================================================================ */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .compare-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.25s;
+    }
+    .compare-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--theme-color);
+    }
+    .compare-card h4 {
+      margin: 0 0 8px;
+      color: var(--theme-color);
+    }
+
+    /* ================================================================
+       🖼 FIGURE
+    ================================================================ */
+    .figure {
+      text-align: center;
+      margin: 24px 0;
+    }
+    .figure img {
+      max-width: 100%;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+    }
+    .figure figcaption,
+    .figure .caption {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* ================================================================
+       🖨 PRINT STYLES
+    ================================================================ */
+    @media print {
+      .sidebar, .sidebar-toggle, .docsify-pagination-container,
+      .app-nav, .back-to-top, .theme-toggle, .reading-progress { display: none !important; }
+      .markdown-section { box-shadow: none; max-width: 100%; padding: 0; background: #fff; }
+      .content { left: 0 !important; }
+    }
+
+    /* ================================================================
+       📱 RESPONSIVE — Tablet
+    ================================================================ */
+    @media (max-width: 1024px) {
+      .page-toc { display: none !important; }
+      .chapter-nav { grid-template-columns: repeat(2, 1fr); }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ================================================================
+       📱 RESPONSIVE — Mobile
+    ================================================================ */
+    @media (max-width: 768px) {
+      /* Content */
+      .markdown-section {
+        padding: 20px 16px;
+        margin: 8px;
+        border-radius: var(--radius-md);
+        font-size: 15px;
+        line-height: 1.75;
+      }
+      .markdown-section h1 { font-size: 1.5rem; }
+      .markdown-section h2 { font-size: 1.25rem; }
+      .markdown-section h3 { font-size: 1.1rem; }
+
+      /* Tables: horizontal scroll */
+      .markdown-section .table-wrapper,
+      .markdown-section table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .markdown-section table {
+        font-size: 0.82rem;
+      }
+      .markdown-section table thead th,
+      .markdown-section table tbody td {
+        padding: 8px 10px;
+        white-space: nowrap;
+      }
+
+      /* Cover page */
+      .cover .cover-main > h1 { font-size: 2rem !important; }
+      .cover .cover-main > blockquote { font-size: 0.95rem; }
+
+      /* Cards */
+      .chapter-nav {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .chapter-nav a { padding: 12px; }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .stat-card { padding: 12px; }
+      .stat-value { font-size: 1.2rem; }
+      .compare-grid { grid-template-columns: 1fr; }
+
+      /* NPU Sandbox iframe */
+      .markdown-section iframe,
+      iframe[src*="npu-sandbox"] {
+        height: 500px !important;
+        border-radius: 12px;
+      }
+
+      /* Mermaid diagrams */
+      .mermaid-container {
+        padding: 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .mermaid-container svg {
+        min-width: 320px;
+      }
+
+      /* Blockquotes */
+      .markdown-section blockquote {
+        padding: 12px 14px;
+        font-size: 0.92rem;
+      }
+
+      /* Code blocks */
+      .markdown-section pre {
+        padding: 14px;
+        font-size: 0.82rem;
+        border-radius: 10px;
+      }
+
+      /* Images */
+      .markdown-section img {
+        border-radius: 10px;
+      }
+      .markdown-section img:hover {
+        transform: none;
+      }
+
+      /* Part intro */
+      .part-intro {
+        padding: 28px 20px;
+        margin: -8px -8px 20px;
+        border-radius: var(--radius-md);
+      }
+      .part-intro h1 { font-size: 1.6rem !important; }
+
+      /* Key takeaway */
+      .key-takeaway { padding: 14px 16px; }
+
+      /* Buttons */
+      .back-to-top { bottom: 16px; right: 16px; width: 40px; height: 40px; }
+      .theme-toggle { bottom: 16px; right: 64px; width: 40px; height: 40px; }
+
+      /* Pagination */
+      .docsify-pagination-container {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .pagination-item { max-width: 100%; }
+    }
+
+    /* ================================================================
+       📱 RESPONSIVE — Small phones (< 400px)
+    ================================================================ */
+    @media (max-width: 400px) {
+      .markdown-section {
+        padding: 14px 12px;
+        margin: 4px;
+        font-size: 14px;
+      }
+      .markdown-section h1 { font-size: 1.3rem; }
+      .stat-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+      .stat-card { padding: 10px; }
+      .stat-value { font-size: 1.1rem; }
+      .chapter-nav a { padding: 10px; }
+      .markdown-section iframe,
+      iframe[src*="npu-sandbox"] {
+        height: 380px !important;
+      }
+      .cover .cover-main > h1 { font-size: 1.6rem !important; }
+    }
+
+    /* ================================================================
+       🌙 DARK MODE OVERRIDES
+    ================================================================ */
+    [data-theme="dark"] .markdown-section h2 {
+      border-bottom-color: #334155;
+    }
+    [data-theme="dark"] .markdown-section blockquote {
+      background: linear-gradient(135deg, #1e293b, #1e3a5f);
+    }
+    [data-theme="dark"] .callout-insight {
+      background: linear-gradient(135deg, #1e293b, #1e3a5f);
+    }
+    [data-theme="dark"] .callout-warning {
+      background: linear-gradient(135deg, #292524, #3f3f46);
+    }
+    [data-theme="dark"] .callout-success {
+      background: linear-gradient(135deg, #14532d, #166534);
+    }
+    [data-theme="dark"] .callout-danger {
+      background: linear-gradient(135deg, #450a0a, #7f1d1d);
+    }
+    [data-theme="dark"] .chapter-nav a,
+    [data-theme="dark"] .stat-card,
+    [data-theme="dark"] .compare-card {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border-color: #334155;
+    }
+    [data-theme="dark"] .mermaid-container {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border-color: #334155;
+    }
+    [data-theme="dark"] .docsify-pagination-container {
+      border-top-color: #334155;
+    }
+    [data-theme="dark"] .pagination-item a {
+      background: #1e293b;
+      border-color: #334155;
+    }
+    [data-theme="dark"] .markdown-section hr {
+      background: linear-gradient(90deg, transparent, #475569, transparent);
+    }
+
+    /* ================================================================
+       🏷️ CHAPTER NUMBER BADGE & READING TIME
+    ================================================================ */
+    .chapter-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+    .chapter-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 56px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--theme-color), var(--theme-color-dark));
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border-radius: 16px;
+      letter-spacing: 0.03em;
+      padding: 0 12px;
+      flex-shrink: 0;
+    }
+    .reading-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      background: #f1f5f9;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+    [data-theme="dark"] .reading-time {
+      background: #334155;
+    }
+
+    /* ================================================================
+       📑 PAGE-LEVEL TABLE OF CONTENTS (Floating)
+    ================================================================ */
+    .page-toc {
+      position: fixed;
+      top: 80px;
+      right: 24px;
+      width: 200px;
+      max-height: calc(100vh - 160px);
+      overflow-y: auto;
+      padding: 12px;
+      background: var(--bg-card);
+      border: 1px solid #e5e7eb;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      font-size: 0.78rem;
+      line-height: 1.6;
+      z-index: 100;
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+    .page-toc.visible {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    .page-toc-title {
+      font-weight: 700;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .page-toc a {
+      display: block;
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 3px 0;
+      border-bottom: none !important;
+      transition: color 0.15s;
+    }
+    .page-toc a:hover {
+      color: var(--theme-color);
+    }
+    .page-toc a.active {
+      color: var(--theme-color);
+      font-weight: 600;
+    }
+    .page-toc .toc-h3 {
+      padding-left: 12px;
+    }
+    [data-theme="dark"] .page-toc {
+      background: #1e293b;
+      border-color: #334155;
+    }
+    [data-theme="dark"] .page-toc-title {
+      border-bottom-color: #334155;
+    }
+    @media (max-width: 1400px) {
+      .page-toc { display: none !important; }
+    }
+
+    /* ================================================================
+       💡 KEY TAKEAWAYS / TL;DR
+    ================================================================ */
+    .key-takeaway {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid var(--secondary-color);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      padding: 20px 24px;
+      margin: 20px 0;
+      position: relative;
+    }
+    .key-takeaway::before {
+      content: '💡';
+      position: absolute;
+      top: -12px;
+      left: 16px;
+      font-size: 1.2rem;
+      background: var(--bg-card);
+      padding: 0 6px;
+      border-radius: 50%;
+    }
+    .key-takeaway-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #15803d;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .key-takeaway ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .key-takeaway li {
+      color: var(--text-primary);
+      font-size: 0.92rem;
+      margin: 4px 0;
+    }
+    .tldr {
+      background: linear-gradient(135deg, #fefce8, #fef3c7);
+      border: 1px solid #fde68a;
+      border-radius: var(--radius-sm);
+      padding: 12px 20px;
+      margin: 16px 0;
+      font-size: 0.95rem;
+      color: #92400e;
+    }
+    .tldr::before {
+      content: '⚡ TL;DR: ';
+      font-weight: 700;
+    }
+    [data-theme="dark"] .key-takeaway {
+      background: linear-gradient(135deg, #14532d, #166534);
+      border-color: #22c55e;
+    }
+    [data-theme="dark"] .key-takeaway-title {
+      color: #4ade80;
+    }
+    [data-theme="dark"] .tldr {
+      background: linear-gradient(135deg, #292524, #3f3f46);
+      border-color: #a16207;
+      color: #fbbf24;
+    }
+
+    /* ================================================================
+       📖 REFERENCE CITATION STYLING
+    ================================================================ */
+    .markdown-section .ref-cite {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      color: var(--theme-color);
+      background: var(--theme-color-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 1px 6px;
+      vertical-align: super;
+      line-height: 1;
+      cursor: help;
+      transition: all 0.2s;
+    }
+    .markdown-section .ref-cite:hover {
+      background: var(--theme-color);
+      color: #fff;
+    }
+    .markdown-section .references-section {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #e5e7eb;
+    }
+    .markdown-section .references-section h3 {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    .markdown-section .ref-list {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      padding-left: 20px;
+    }
+    .markdown-section .ref-list li {
+      margin: 4px 0;
+    }
+    .markdown-section .ref-list code {
+      font-size: 0.8em;
+    }
+
+    /* ================================================================
+       🎨 PART TRANSITION / SECTION INTRO PAGES
+    ================================================================ */
+    .part-intro {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, var(--theme-color) 100%);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      padding: 48px 40px;
+      margin: -8px -16px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .part-intro::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(96,165,250,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96,165,250,0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .part-intro > * {
+      position: relative;
+      z-index: 1;
+    }
+    .part-intro .part-number {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #93c5fd;
+      margin-bottom: 16px;
+    }
+    .part-intro h1 {
+      color: #fff !important;
+      font-size: 2.2rem;
+      border: none !important;
+      padding-bottom: 0 !important;
+      margin-bottom: 12px !important;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .part-intro .part-subtitle {
+      color: #93c5fd;
+      font-size: 1.15rem;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .part-intro .part-meta {
+      color: #94a3b8;
+      font-size: 0.88rem;
+    }
+
+    /* ================================================================
+       📊 ENHANCED FIGURE CAPTIONS
+    ================================================================ */
+    .figure {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin: 24px 0;
+    }
+    .figure img {
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+      max-width: 100%;
+      margin: 0 auto 12px;
+      display: block;
+    }
+    .figure .caption {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+      margin: 0;
+      font-style: normal;
+    }
+    .figure .caption strong {
+      color: var(--text-primary);
+    }
+    [data-theme="dark"] .figure {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border-color: #334155;
+    }
+    [data-theme="dark"] .figure .caption {
+      border-top-color: #334155;
+    }
+
+    /* ================================================================
+       🖨 ENHANCED PRINT STYLES
+    ================================================================ */
+    @media print {
+      .sidebar, .sidebar-toggle, .docsify-pagination-container,
+      .app-nav, .back-to-top, .theme-toggle, .reading-progress,
+      .page-toc { display: none !important; }
+      .markdown-section {
+        box-shadow: none;
+        max-width: 100%;
+        padding: 0;
+        background: #fff;
+      }
+      .content { left: 0 !important; }
+      .part-intro {
+        background: #1e293b !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        break-after: page;
+      }
+      .markdown-section table {
+        break-inside: avoid;
+      }
+      .markdown-section pre {
+        break-inside: avoid;
+        background: #f8fafc !important;
+        border: 1px solid #e5e7eb !important;
+      }
+      .markdown-section h2 {
+        break-after: avoid;
+      }
+      .figure {
+        break-inside: avoid;
+        border: 1px solid #e5e7eb;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-icon" style="font-size:2rem;font-weight:700;color:#60a5fa;">SoC</div>
+    <div class="loading-text">智能驾驶芯片产业白皮书</div>
+    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+  </div>
+
+  <!-- Reading Progress Bar -->
+  <div class="reading-progress" id="readingProgress"></div>
+
+  <!-- Back to Top -->
+  <button class="back-to-top" id="backToTop" title="返回顶部">↑</button>
+
+  <!-- Dark Mode Toggle -->
+  <button class="theme-toggle" id="themeToggle" title="切换暗色模式">🌙</button>
+
+  <!-- Docsify App -->
+  <div id="app"></div>
+
+  <script>
+    // ================================================================
+    // Docsify Configuration
+    // ================================================================
+    window.$docsify = {
+      name: '智驾芯片白皮书',
+      repo: '',
+      loadSidebar: true,
+      subMaxLevel: 3,
+      coverpage: true,
+      auto2top: true,
+      topMargin: 20,
+      search: {
+        maxAge: 86400000,
+        paths: 'auto',
+        placeholder: '搜索内容...',
+        noData: '没有找到相关结果',
+        depth: 4
+      },
+      pagination: {
+        previousText: '上一章节',
+        nextText: '下一章节',
+        crossChapter: true,
+        crossChapterText: true,
+      },
+      formatUpdated: '{YYYY}-{MM}-{DD}',
+    }
+  </script>
+
+  <!-- Mermaid -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+    // Wait for fonts to load before initializing Mermaid
+    var mermaidReady = document.fonts ? document.fonts.ready : Promise.resolve();
+
+    mermaidReady.then(function() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        securityLevel: 'loose',
+        fontFamily: '"Noto Sans SC", "Inter", sans-serif',
+        fontSize: 14,
+        themeVariables: {
+          fontSize: '14px',
+          fontFamily: '"Noto Sans SC", "Inter", sans-serif',
+          nodePadding: 60,
+          clusterBkg: '#f1f5f9',
+          clusterBorder: '#cbd5e1'
+        },
+        sequence: {
+          useMaxWidth: true,
+          wrap: false,
+          actorMargin: 80,
+          width: 200,
+          height: 50,
+          messageMargin: 50
+        },
+        flowchart: {
+          useMaxWidth: true,
+          htmlLabels: true,
+          curve: 'basis',
+          nodeSpacing: 50,
+          rankSpacing: 70,
+          padding: 40,
+          defaultRenderer: 'dagre-wrapper',
+          wrap: false,
+          wrapWidth: 500
+        }
+      });
+    });
+
+    // Helper: gently fix CJK text clipping without causing overflow
+    function fixCJKNode(svgEl) {
+      // For all nodes, ensure text fits within its rect
+      svgEl.querySelectorAll('.node').forEach(function(nodeEl) {
+        var fo = nodeEl.querySelector('foreignObject');
+        var rect = nodeEl.querySelector('rect');
+        if (!fo || !rect) return;
+
+        var inner = fo.querySelector('.nodeLabel, .label, span, div');
+        if (!inner) return;
+
+        // Measure the actual text width
+        inner.style.whiteSpace = 'nowrap';
+        inner.style.display = 'inline-block';
+        inner.style.textAlign = 'center';
+
+        var actualW = inner.scrollWidth || inner.offsetWidth;
+        var foW = parseFloat(fo.getAttribute('width'));
+        var rectW = parseFloat(rect.getAttribute('width'));
+
+        // Only expand if text is genuinely wider than container
+        var neededW = actualW + 28;
+        var maxW = Math.max(foW, rectW);
+
+        if (maxW < neededW) {
+          var newW = neededW;
+          var diff = newW - maxW;
+
+          // Expand rect
+          rect.setAttribute('width', newW);
+          rect.setAttribute('x', parseFloat(rect.getAttribute('x')) - diff / 2);
+
+          // Expand foreignObject to match
+          fo.setAttribute('width', newW);
+          fo.setAttribute('x', parseFloat(fo.getAttribute('x')) - diff / 2);
+        }
+
+        // Keep overflow hidden to prevent text flying out
+        inner.style.overflow = 'hidden';
+        fo.style.overflow = 'hidden';
+      });
+
+      // Fix edge labels
+      svgEl.querySelectorAll('.edgeLabel').forEach(function(el) {
+        var fo = el.querySelector('foreignObject');
+        var rect = el.querySelector('rect');
+        if (!fo || !rect) return;
+
+        var inner = fo.querySelector('span, div');
+        if (!inner) return;
+
+        inner.style.whiteSpace = 'nowrap';
+        inner.style.textAlign = 'center';
+
+        var tw = inner.scrollWidth + 16;
+        var rw = parseFloat(rect.getAttribute('width'));
+        var fw = parseFloat(fo.getAttribute('width'));
+
+        if (rw < tw) {
+          rect.setAttribute('width', tw);
+          fo.setAttribute('width', tw);
+          var diff = tw - rw;
+          rect.setAttribute('x', parseFloat(rect.getAttribute('x')) - diff / 2);
+          fo.setAttribute('x', parseFloat(fo.getAttribute('x')) - diff / 2);
+        }
+
+        inner.style.overflow = 'hidden';
+        fo.style.overflow = 'hidden';
+      });
+
+      // Fix SVG text elements (non-htmlLabels fallback)
+      svgEl.querySelectorAll('text').forEach(function(t) {
+        t.style.fontFamily = '"Noto Sans SC", "Inter", sans-serif';
+      });
+
+      // If SVG overflows container, scale it down
+      var container = svgEl.closest('.mermaid-container');
+      if (container) {
+        var containerW = container.clientWidth - 32;
+        var svgW = svgEl.viewBox.baseVal ? svgEl.viewBox.baseVal.width : parseFloat(svgEl.getAttribute('width')) || containerW;
+        if (svgW > containerW) {
+          svgEl.style.maxWidth = '100%';
+          svgEl.style.width = '100%';
+        }
+      }
+    }
+
+    // Mermaid Docsify plugin
+    window.$docsify = window.$docsify || {};
+    window.$docsify.plugins = window.$docsify.plugins || [];
+    window.$docsify.plugins.push(function(hook) {
+      hook.doneEach(function() {
+        var blocks = document.querySelectorAll('.markdown-section pre[data-lang="mermaid"] code');
+        if (blocks.length === 0) blocks = document.querySelectorAll('.markdown-section pre[data-lang="mermaid"]');
+        if (blocks.length === 0) return;
+
+        // Ensure fonts are loaded before rendering
+        var renderPromise = document.fonts ? document.fonts.ready : Promise.resolve();
+        renderPromise.then(function() {
+          blocks.forEach(function(block) {
+            var content = block.textContent.trim();
+            if (!content) return;
+            var wrapper = document.createElement('div');
+            wrapper.className = 'mermaid-container';
+            wrapper.innerHTML = '<div style="color:#94a3b8;padding:20px;">Rendering diagram...</div>';
+            var parent = block.closest('pre') || block.parentNode;
+            parent.parentNode.replaceChild(wrapper, parent);
+            var renderId = 'm' + Math.random().toString(36).substr(2, 9);
+            mermaid.render(renderId, content).then(function(result) {
+              wrapper.innerHTML = typeof result === 'string' ? result : result.svg;
+              var svgEl = wrapper.querySelector('svg');
+              if (svgEl) {
+                svgEl.removeAttribute('height');
+                svgEl.style.height = 'auto';
+                svgEl.style.fontFamily = '"Noto Sans SC", "Inter", sans-serif';
+
+                // Auto-scale if SVG is wider than container
+                var containerWidth = wrapper.clientWidth - 32;
+                var svgWidth = svgEl.viewBox.baseVal
+                  ? svgEl.viewBox.baseVal.width
+                  : parseFloat(svgEl.getAttribute('width')) || containerWidth;
+                if (svgWidth > containerWidth) {
+                  svgEl.style.maxWidth = '100%';
+                  svgEl.style.width = '100%';
+                } else {
+                  svgEl.style.maxWidth = svgWidth + 'px';
+                  svgEl.style.width = svgWidth + 'px';
+                }
+
+                // Fix CJK text clipping
+                fixCJKNode(svgEl);
+              }
+            }).catch(function(err) {
+              console.warn('Mermaid error:', err);
+              wrapper.innerHTML = '<pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.85rem;white-space:pre-wrap;text-align:left;">' +
+                content.replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>') +
+                '</pre><p style="color:#ea4335;font-size:0.8rem;margin-top:4px;">Diagram render failed</p>';
+            });
+          });
+        });
+      });
+    });
+  </script>
+
+  <!-- Docsify Core & Plugins -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-pagination@2/dist/docsify-pagination.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@2/dist/docsify-copy-code.min.js"></script>
+
+  <!-- Prism Syntax Highlighting -->
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
+
+  <!-- UI Enhancement Scripts -->
+  <script>
+    // ================================================================
+    // Reading Progress Bar
+    // ================================================================
+    (function() {
+      var bar = document.getElementById('readingProgress');
+      window.addEventListener('scroll', function() {
+        var scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        var scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+        bar.style.width = progress + '%';
+      }, { passive: true });
+    })();
+
+    // ================================================================
+    // Back to Top
+    // ================================================================
+    (function() {
+      var btn = document.getElementById('backToTop');
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 400) {
+          btn.classList.add('visible');
+        } else {
+          btn.classList.remove('visible');
+        }
+      }, { passive: true });
+      btn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    })();
+
+    // ================================================================
+    // Dark Mode Toggle
+    // ================================================================
+    (function() {
+      var toggle = document.getElementById('themeToggle');
+      var saved = localStorage.getItem('theme');
+      if (saved === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        toggle.textContent = '☀️';
+      }
+      toggle.addEventListener('click', function() {
+        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          toggle.textContent = '🌙';
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          toggle.textContent = '☀️';
+          localStorage.setItem('theme', 'dark');
+        }
+      });
+    })();
+
+    // ================================================================
+    // Loading Screen Dismiss
+    // ================================================================
+    (function() {
+      var screen = document.getElementById('loadingScreen');
+      function dismiss() {
+        screen.classList.add('fade-out');
+        setTimeout(function() { screen.remove(); }, 600);
+      }
+      window.$docsify.plugins = window.$docsify.plugins || [];
+      window.$docsify.plugins.push(function(hook) {
+        hook.ready(function() { setTimeout(dismiss, 300); });
+      });
+      setTimeout(dismiss, 3000);
+    })();
+
+    // ================================================================
+    // 🔢 Chapter Badge + Reading Time + Page TOC + Ref Citations
+    // ================================================================
+    (function() {
+      // Create floating TOC container
+      var tocEl = document.createElement('div');
+      tocEl.className = 'page-toc';
+      tocEl.innerHTML = '<div class="page-toc-title">本节目录</div>';
+      document.body.appendChild(tocEl);
+
+      // Chapter map: ch1 → 1, ch54 → 54, intro_1 → "导读"
+      function getChapterInfo(path) {
+        var m = path.match(/ch(\d+)/);
+        if (m) return { num: parseInt(m[1]), type: 'ch' };
+        if (path.match(/intro_/)) return { num: 0, type: 'intro' };
+        return { num: 0, type: 'other' };
+      }
+
+      // Estimate reading time (Chinese: ~400 chars/min)
+      function estimateReadingTime(text) {
+        var chars = text.replace(/\s/g, '').length;
+        var minutes = Math.ceil(chars / 400);
+        return minutes < 1 ? '1 min' : minutes + ' min';
+      }
+
+      window.$docsify.plugins = window.$docsify.plugins || [];
+      window.$docsify.plugins.push(function(hook) {
+        hook.doneEach(function() {
+          var section = document.querySelector('.markdown-section');
+          if (!section) return;
+
+          // --- Chapter Badge & Reading Time ---
+          var h1 = section.querySelector('h1');
+          if (h1 && !h1.querySelector('.chapter-badge')) {
+            var path = location.hash.replace('#/', '').replace('#', '');
+            var info = getChapterInfo(path);
+            if (info.num > 0 || info.type === 'intro') {
+              var headerDiv = document.createElement('div');
+              headerDiv.className = 'chapter-header';
+
+              var badge = document.createElement('span');
+              badge.className = 'chapter-badge';
+              badge.textContent = info.type === 'ch' ? 'Ch.' + info.num : '导读';
+
+              var rt = document.createElement('span');
+              rt.className = 'reading-time';
+              rt.textContent = '⏱ ' + estimateReadingTime(section.textContent);
+
+              headerDiv.appendChild(badge);
+              headerDiv.appendChild(rt);
+              h1.parentNode.insertBefore(headerDiv, h1);
+            }
+          }
+
+          // --- Page-Level TOC (floating, right side) ---
+          var headings = section.querySelectorAll('h2, h3');
+          if (headings.length >= 3) {
+            var tocHtml = '<div class="page-toc-title">本节目录</div>';
+            headings.forEach(function(h) {
+              var indent = h.tagName === 'H3' ? ' toc-h3' : '';
+              var id = h.id || h.querySelector('[id]')?.id;
+              if (id) {
+                tocHtml += '<a href="#/' + location.hash.replace('#/', '').replace('#', '') + '#' + id + '" class="toc-item' + indent + '">' + h.textContent.trim() + '</a>';
+              }
+            });
+            tocEl.innerHTML = tocHtml;
+
+            // Show/hide based on screen width
+            if (window.innerWidth > 1400) {
+              tocEl.classList.add('visible');
+            }
+
+            // Highlight active heading on scroll
+            function updateTocActive() {
+              var links = tocEl.querySelectorAll('.toc-item');
+              var scrollPos = window.scrollY + 100;
+              var activeIdx = -1;
+              headings.forEach(function(h, i) {
+                if (h.offsetTop <= scrollPos) activeIdx = i;
+              });
+              links.forEach(function(l, i) {
+                l.classList.toggle('active', i === activeIdx);
+              });
+            }
+            window.removeEventListener('scroll', updateTocActive);
+            window.addEventListener('scroll', updateTocActive, { passive: true });
+            updateTocActive();
+          } else {
+            tocEl.classList.remove('visible');
+          }
+
+          // --- Reference Citation Highlighting ---
+          // Convert [P3], [P6], [GWP], etc. in text to styled badges
+          section.innerHTML = section.innerHTML.replace(
+            /\[([A-Z]\w{0,3}\d{0,2})\]/g,
+            '<span class="ref-cite" title="参考文献">$1</span>'
+          );
+
+          // --- Convert ⚠️ emoji in blockquotes to warning styling ---
+          section.querySelectorAll('blockquote').forEach(function(bq) {
+            var text = bq.textContent;
+            if (text.indexOf('⚠️') !== -1 || text.indexOf('注意') !== -1) {
+              bq.style.background = 'linear-gradient(135deg, #fffbeb, #fef3c7)';
+              bq.style.borderLeftColor = '#f59e0b';
+            }
+          });
+        });
+      });
+
+      // Handle window resize for TOC visibility
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 1400) {
+          var headings = document.querySelectorAll('.markdown-section h2, .markdown-section h3');
+          if (headings.length >= 3) tocEl.classList.add('visible');
+        } else {
+          tocEl.classList.remove('visible');
+        }
+      }, { passive: true });
+    })();
+  </script>
+</body>
+</html>

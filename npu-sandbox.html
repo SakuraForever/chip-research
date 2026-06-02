@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NPU Architecture Sandbox</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'Noto Sans SC', sans-serif;
+    background: #fafafa;
+    color: #1d1d1f;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ── */
+  .sandbox-header {
+    text-align: center;
+    padding: 40px 24px 24px;
+  }
+  .sandbox-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #1d1d1f;
+  }
+  .sandbox-header p {
+    font-size: 1.05rem;
+    color: #86868b;
+    margin-top: 8px;
+    font-weight: 400;
+  }
+
+  /* ── Chip Selector Tabs ── */
+  .chip-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 24px 32px;
+    flex-wrap: wrap;
+  }
+  .chip-tab {
+    padding: 8px 20px;
+    border-radius: 980px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: #e8e8ed;
+    color: #1d1d1f;
+    transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  .chip-tab:hover {
+    background: #d2d2d7;
+  }
+  .chip-tab.active {
+    background: #1d1d1f;
+    color: #fff;
+  }
+
+  /* ── Main Architecture View ── */
+  .arch-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 40px;
+  }
+  .arch-wrapper {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── SVG Architecture ── */
+  .arch-svg {
+    width: 100%;
+    height: auto;
+  }
+  .arch-svg .module {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  .arch-svg .module:hover {
+    filter: brightness(0.95);
+  }
+  .arch-svg .module:hover .module-bg {
+    stroke: #0071e3;
+    stroke-width: 2;
+  }
+  .arch-svg .module.active .module-bg {
+    stroke: #0071e3;
+    stroke-width: 2.5;
+    filter: drop-shadow(0 0 6px rgba(0,113,227,0.3));
+  }
+  .arch-svg .module-bg {
+    rx: 10;
+    ry: 10;
+    transition: all 0.3s;
+  }
+  .arch-svg .module-label {
+    font-family: -apple-system, 'SF Pro Display', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    fill: #1d1d1f;
+    pointer-events: none;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .arch-svg .module-sublabel {
+    font-family: -apple-system, 'SF Pro Display', sans-serif;
+    font-size: 9.5px;
+    font-weight: 400;
+    fill: #86868b;
+    pointer-events: none;
+    text-anchor: middle;
+  }
+  .arch-svg .bus-line {
+    stroke: #d2d2d7;
+    stroke-width: 2;
+    fill: none;
+    transition: stroke 0.4s;
+  }
+  .arch-svg .bus-line.active {
+    stroke: #0071e3;
+    stroke-width: 3;
+  }
+  .arch-svg .bus-arrow {
+    fill: #d2d2d7;
+    transition: fill 0.4s;
+  }
+  .arch-svg .bus-arrow.active {
+    fill: #0071e3;
+  }
+  .arch-svg .data-dot {
+    fill: #0071e3;
+    opacity: 0;
+  }
+  .arch-svg .data-dot.animating {
+    opacity: 1;
+  }
+
+  /* ── Detail Panel ── */
+  .detail-panel {
+    margin-top: 24px;
+    background: #f5f5f7;
+    border-radius: 16px;
+    padding: 24px 28px;
+    min-height: 120px;
+    transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+  .detail-panel.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #86868b;
+    font-size: 0.95rem;
+  }
+  .detail-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 4px;
+  }
+  .detail-desc {
+    font-size: 0.9rem;
+    color: #6e6e73;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  .detail-params {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .detail-param {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+  .detail-param-label {
+    font-size: 0.75rem;
+    color: #86868b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+  }
+  .detail-param-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-top: 2px;
+  }
+  .detail-param-note {
+    font-size: 0.75rem;
+    color: #86868b;
+    margin-top: 2px;
+  }
+
+  /* ── Chip Overview Stats ── */
+  .chip-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .chip-stat {
+    text-align: center;
+    padding: 12px 8px;
+    background: #f5f5f7;
+    border-radius: 12px;
+  }
+  .chip-stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #0071e3;
+  }
+  .chip-stat-label {
+    font-size: 0.72rem;
+    color: #86868b;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 500;
+  }
+
+  /* ── Data Flow Animation ── */
+  @keyframes flowDot {
+    0% { offset-distance: 0%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { offset-distance: 100%; opacity: 0; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .sandbox-header h1 { font-size: 1.5rem; }
+    .chip-stats { grid-template-columns: repeat(2, 1fr); }
+    .arch-wrapper { padding: 16px; }
+    .detail-params { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sandbox-header">
+  <h1>NPU Architecture Explorer</h1>
+  <p>点击架构图中的任意模块，探索典型车载NPU的内部结构</p>
+</div>
+
+<div class="chip-tabs" id="chipTabs"></div>
+
+<div class="arch-container">
+  <div class="chip-stats" id="chipStats"></div>
+  <div class="arch-wrapper">
+    <svg class="arch-svg" id="archSvg" viewBox="0 0 840 520"></svg>
+  </div>
+  <div class="detail-panel empty" id="detailPanel">
+    👆 点击上方架构图中的模块查看详细信息
+  </div>
+</div>
+
+<script>
+// ── Chip Architecture Data ──
+const chips = {
+  tesla: {
+    name: 'Tesla FSD NPU',
+    stats: [
+      { value: '96×96', label: 'MAC Array' },
+      { value: '73.7T', label: 'INT8 TOPS' },
+      { value: '32MB', label: 'SRAM' },
+      { value: '68 GB/s', label: 'Bandwidth' }
+    ],
+    modules: {
+      dma: { x:20, y:10, w:260, h:65, label:'DMA Controller', sub:'8-channel DMA', color:'#e8f4fd',
+        desc:'8通道独立DMA控制器，管理DDR↔SRAM之间的数据搬移',
+        params: [
+          { label:'通道数', value:'8', note:'独立并行' },
+          { label:'带宽', value:'68 GB/s', note:'LPDDR4X' },
+          { label:'支持格式', value:'INT8/FP16', note:'硬件量化' },
+          { label:'延迟', value:'~2μs', note:'DDR→SRAM' }
+        ]
+      },
+      sram: { x:20, y:90, w:260, h:85, label:'SRAM Bank', sub:'32MB Unified SRAM', color:'#fff3e0',
+        desc:'32MB 统一SRAM，分4个bank，作为权重和激活的片上缓存',
+        params: [
+          { label:'容量', value:'32MB', note:'4×8MB Bank' },
+          { label:'带宽', value:'~2 TB/s', note:'内部总线' },
+          { label:'延迟', value:'1 cycle', note:'单周期访问' },
+          { label:'功耗', value:'~0.5pJ/bit', note:'vs DDR 40pJ/bit' }
+        ]
+      },
+      mac: { x:20, y:190, w:260, h:140, label:'MAC Array', sub:'96×96 Systolic Array', color:'#fce4ec',
+        desc:'96×96 脉动阵列（Systolic Array），支持INT8乘累加运算。数据从左上角流入，沿对角线方向脉动传播。',
+        params: [
+          { label:'阵列规模', value:'96×96', note:'9,216 MACs' },
+          { label:'时钟频率', value:'2 GHz', note:'典型工作频率' },
+          { label:'INT8峰值', value:'36.86 TOPS', note:'96×96×2×2GHz' },
+          { label:'利用率(CNN)', value:'~70%', note:'典型卷积工作负载' }
+        ]
+      },
+      act: { x:20, y:345, w:125, h:60, label:'Activation', sub:'ReLU/Sigmoid', color:'#e8f5e9',
+        desc:'硬件激活函数单元，支持ReLU/ReLU6/Sigmoid/Tanh',
+        params: [
+          { label:'延迟', value:'1 cycle', note:'逐元素' },
+          { label:'支持类型', value:'4种', note:'ReLU/Swish/Sig/Tanh' }
+        ]
+      },
+      pool: { x:155, y:345, w:125, h:60, label:'Pooling', sub:'Max/Avg Pool', color:'#f3e5f5',
+        desc:'硬件池化单元，支持Max Pooling、Average Pooling和Global Average Pooling',
+        params: [
+          { label:'窗口大小', value:'1-7×7', note:'可配置' },
+          { label:'支持类型', value:'3种', note:'Max/Avg/GAP' }
+        ]
+      },
+      seq: { x:20, y:420, w:260, h:55, label:'Sequencer', sub:'VLIW Instruction', color:'#fff8e1',
+        desc:'超长指令字（VLIW）序列器，每周期发射多条指令控制各模块协同工作',
+        params: [
+          { label:'指令宽度', value:'VLIW 128-bit', note:'多发射' },
+          { label:'程序存储', value:'64KB', note:'微码ROM+SRAM' }
+        ]
+      },
+      noc: { x:300, y:90, w:60, h:240, label:'NoC', sub:'Crossbar', color:'#f5f5f5',
+        desc:'片上网络（Network-on-Chip），采用交叉开关互连，连接各功能模块',
+        params: [
+          { label:'拓扑', value:'Crossbar', note:'全互连' },
+          { label:'带宽', value:'~512 GB/s', note:'内部' }
+        ]
+      },
+      ddr: { x:380, y:10, w:200, h:65, label:'DDR Controller', sub:'LPDDR4X 4267', color:'#efebe9',
+        desc:'DDR内存控制器，连接片外LPDDR4X DRAM',
+        params: [
+          { label:'类型', value:'LPDDR4X', note:'低功耗' },
+          { label:'位宽', value:'128-bit', note:'双通道' },
+          { label:'带宽', value:'68 GB/s', note:'理论峰值' },
+          { label:'容量', value:'4-8GB', note:'片外DRAM' }
+        ]
+      },
+      ctrl: { x:380, y:90, w:200, h:85, label:'Control Processor', sub:'RISC-V Core', color:'#e0f2f1',
+        desc:'嵌入式控制处理器，负责算子调度、DMA配置和中断处理',
+        params: [
+          { label:'核心', value:'RISC-V RV64', note:'定制核心' },
+          { label:'频率', value:'~500MHz', note:'低功耗' },
+          { label:'功能', value:'调度+DMA', note:'不参与计算' }
+        ]
+      },
+      post: { x:380, y:190, w:200, h:140, label:'Post-Processor', sub:'NMS / Sort / Dequant', color:'#ede7f6',
+        desc:'后处理单元，包括非极大值抑制(NMS)、排序、反量化等操作',
+        params: [
+          { label:'NMS', value:'硬件加速', note:'专用电路' },
+          { label:'反量化', value:'INT8→FP32', note:'单周期' },
+          { label:'排序', value:'Top-K', note:'并行比较器' }
+        ]
+      },
+      if: { x:380, y:345, w:200, h:60, label:'Interface', sub:'PCIe / MIPI CSI', color:'#e3f2fd',
+        desc:'对外接口，连接SoC其他子系统（CPU、ISP、以太网）',
+        params: [
+          { label:'摄像头', value:'MIPI CSI-2', note:'12路输入' },
+          { label:'SoC通信', value:'PCIe Gen3', note:'×4' }
+        ]
+      },
+      pwr: { x:380, y:420, w:200, h:55, label:'Power Mgmt', sub:'DVFS / Clock Gating', color:'#f1f8e9',
+        desc:'电源管理单元，支持动态电压频率调节（DVFS）和时钟门控',
+        params: [
+          { label:'DVFS', value:'0.6-1.0V', note:'4档电压' },
+          { label:'功耗', value:'~15W', note:'单NPU满载' }
+        ]
+      }
+    },
+    buses: [
+      { path:'M300,42 L380,42', from:'ddr', to:'dma' },           // DDR→DMA
+      { path:'M150,75 L150,90', from:'dma', to:'sram' },          // DMA→SRAM
+      { path:'M150,175 L150,190', from:'sram', to:'mac' },        // SRAM→MAC
+      { path:'M82,330 L82,345', from:'mac', to:'act' },           // MAC→Act
+      { path:'M218,330 L218,345', from:'mac', to:'pool' },        // MAC→Pool
+      { path:'M150,405 L150,420', from:'act', to:'seq' },         // Act→Seq
+      { path:'M280,132 L300,132', from:'sram', to:'noc' },        // SRAM→NoC
+      { path:'M280,260 L300,260', from:'mac', to:'noc' },         // MAC→NoC
+      { path:'M360,132 L380,132', from:'noc', to:'ctrl' },        // NoC→Ctrl
+      { path:'M360,260 L380,260', from:'noc', to:'post' },        // NoC→Post
+      { path:'M480,330 L480,345', from:'post', to:'if' },         // Post→IF
+    ]
+  },
+  orin: {
+    name: 'NVIDIA Orin GPU',
+    stats: [
+      { value: '2048+', label: 'CUDA Cores' },
+      { value: '131T', label: 'INT8 TOPS' },
+      { value: '4MB', label: 'L2 Cache' },
+      { value: '204 GB/s', label: 'Bandwidth' }
+    ],
+    modules: {
+      l2: { x:20, y:10, w:260, h:60, label:'L2 Cache', sub:'4MB Shared', color:'#e8f4fd',
+        desc:'4MB 共享L2缓存，连接所有SM和DDR控制器',
+        params: [
+          { label:'容量', value:'4MB', note:'统一缓存' },
+          { label:'延迟', value:'~20 cycles', note:'命中时' }
+        ]
+      },
+      sm: { x:20, y:85, w:260, h:150, label:'Streaming Multiprocessor', sub:'×16 SMs (Ampere)', color:'#fce4ec',
+        desc:'16个流多处理器（SM），每个SM包含128个CUDA Core + 4个Tensor Core + 1个RT Core',
+        params: [
+          { label:'SM数量', value:'16', note:'Ampere架构' },
+          { label:'CUDA/SM', value:'128', note:'共2048+' },
+          { label:'Tensor/SM', value:'4', note:'HMMA INT8' },
+          { label:'频率', value:'~1.3 GHz', note:'典型' }
+        ]
+      },
+      tensor: { x:20, y:250, w:260, h:60, label:'Tensor Core', sub:'×64 (INT8/FP16)', color:'#fff3e0',
+        desc:'64个Tensor Core，支持INT8/FP16/TF32矩阵乘加速，2:4结构化稀疏',
+        params: [
+          { label:'数量', value:'64', note:'4×16 SM' },
+          { label:'INT8吞吐', value:'131 TOPS', note:'稀疏' },
+          { label:'稀疏支持', value:'2:4', note:'结构化稀疏' }
+        ]
+      },
+      l1: { x:20, y:325, w:125, h:55, label:'L1/Shared', sub:'128KB/SM', color:'#e8f5e9',
+        desc:'每个SM内部128KB L1/共享内存，程序员可管理',
+        params: [
+          { label:'容量', value:'128KB/SM', note:'总计2MB' },
+          { label:'延迟', value:'~5 cycles', note:'共享内存' }
+        ]
+      },
+      warp: { x:155, y:325, w:125, h:55, label:'Warp Scheduler', sub:'4×32-thread', color:'#f3e5f5',
+        desc:'每个SM有4个Warp调度器，每个调度32个线程（Warp）',
+        params: [
+          { label:'调度器', value:'4/SM', note:'每周期2条指令' },
+          { label:'线程/Warp', value:'32', note:'SIMT执行' }
+        ]
+      },
+      noc: { x:300, y:85, w:60, h:225, label:'NVLink', sub:'Crossbar', color:'#f5f5f5',
+        desc:'内部高速互连总线，连接SM集群与内存控制器',
+        params: [
+          { label:'拓扑', value:'Crossbar', note:'非一致性' },
+          { label:'聚合带宽', value:'~900 GB/s', note:'内部' }
+        ]
+      },
+      ddr: { x:380, y:10, w:200, h:60, label:'Memory Controller', sub:'LPDDR5 204.8GB/s', color:'#efebe9',
+        desc:'DDR内存控制器，256-bit位宽LPDDR5接口',
+        params: [
+          { label:'类型', value:'LPDDR5', note:'车规级' },
+          { label:'带宽', value:'204.8 GB/s', note:'理论峰值' }
+        ]
+      },
+      dla: { x:380, y:85, w:200, h:110, label:'DLA 2.0', sub:'Deep Learning Accelerator', color:'#e0f2f1',
+        desc:'2个专用深度学习加速器，用于CNN推理卸载',
+        params: [
+          { label:'数量', value:'2', note:'独立' },
+          { label:'算力', value:'20 TOPS', note:'各10T' },
+          { label:'用途', value:'CNN卸载', note:'释放GPU' }
+        ]
+      },
+      pva: { x:380, y:210, w:200, h:60, label:'PVA v2.0', sub:'Programmable Vision', color:'#ede7f6',
+        desc:'可编程视觉加速器，处理传统CV算法（特征提取、光流等）',
+        params: [
+          { label:'用途', value:'传统CV', note:'ISP后处理' },
+          { label:'算力', value:'~7 TOPS', note:'等效' }
+        ]
+      },
+      enc: { x:380, y:285, w:200, h:60, label:'NVENC', sub:'Video Encoder', color:'#e3f2fd',
+        desc:'硬件视频编码器，支持H.265/H.264实时编码',
+        params: [
+          { label:'格式', value:'H.265/AV1', note:'8K@30fps' },
+          { label:'通道', value:'2路', note:'并行编码' }
+        ]
+      },
+      safety: { x:380, y:360, w:200, h:55, label:'Safety Island', sub:'ASIL-D Lock-Step', color:'#fff8e1',
+        desc:'功能安全岛，双核锁步R5F，ASIL-D等级安全监控',
+        params: [
+          { label:'等级', value:'ASIL-D', note:'最高安全等级' },
+          { label:'核心', value:'Cortex-R5F', note:'锁步模式' }
+        ]
+      }
+    },
+    buses: []
+  },
+  horizon: {
+    name: '地平线 J6 BPU',
+    stats: [
+      { value: '560T', label: 'INT8 TOPS' },
+      { value: '~8MB', label: 'SRAM' },
+      { value: '51.2 GB/s', label: 'Bandwidth' },
+      { value: '35W', label: 'TDP' }
+    ],
+    modules: {
+      sram: { x:20, y:10, w:260, h:65, label:'BPU SRAM', sub:'~8MB Multi-Bank', color:'#fff3e0',
+        desc:'多Bank SRAM设计，支持CNN权重和BEV特征的片上缓存',
+        params: [
+          { label:'容量', value:'~8MB', note:'推测' },
+          { label:'Bank数', value:'4-8', note:'并行访问' }
+        ]
+      },
+      bnn: { x:20, y:90, w:260, h:140, label:'BNN Engine', sub:'Binarized Neural Network', color:'#fce4ec',
+        desc:'地平线自研BNN（二值化神经网络）引擎，用1-bit权重替代传统8-bit，极大降低计算量和内存访问',
+        params: [
+          { label:'技术', value:'BNN', note:'1-bit权重' },
+          { label:'等效算力', value:'560 TOPS', note:'INT8等效' },
+          { label:'利用率(CNN)', value:'~90%', note:'极高利用率' },
+          { label:'压缩比', value:'~32×', note:'vs FP32' }
+        ]
+      },
+      conv: { x:20, y:245, w:125, h:65, label:'Conv Engine', sub:'Depthwise + Pointwise', color:'#e8f5e9',
+        desc:'专用卷积加速引擎，针对MobileNet风格的Depthwise+Pointwise卷积优化',
+        params: [
+          { label:'支持类型', value:'DW+PW', note:'分离卷积' },
+          { label:'利用率', value:'>80%', note:'轻量卷积' }
+        ]
+      },
+      pool2: { x:155, y:245, w:125, h:65, label:'Pool+BN', sub:'Pool / BatchNorm', color:'#f3e5f5',
+        desc:'硬件池化和BatchNorm融合单元',
+        params: [
+          { label:'融合', value:'Conv+BN+ReLU', note:'零开销' },
+          { label:'精度', value:'INT8', note:'对称量化' }
+        ]
+      },
+      seq: { x:20, y:325, w:260, h:55, label:'BPU Scheduler', sub:'Micro-coded', color:'#fff8e1',
+        desc:'微码调度器，自动将计算图分解为BPU指令流',
+        params: [
+          { label:'调度方式', value:'微码', note:'静态编译' },
+          { label:'编译器', value:'天工开物', note:'地平线自研' }
+        ]
+      },
+      noc: { x:300, y:90, w:60, h:190, label:'NoC', sub:'Ring Bus', color:'#f5f5f5',
+        desc:'环形总线互连，连接多BPU核心',
+        params: [
+          { label:'拓扑', value:'Ring', note:'多核互连' },
+          { label:'BPU核心数', value:'4 (J6H)', note:'4×140T' }
+        ]
+      },
+      ddr: { x:380, y:10, w:200, h:65, label:'DDR Controller', sub:'LPDDR5 51.2GB/s', color:'#efebe9',
+        desc:'DDR内存控制器',
+        params: [
+          { label:'类型', value:'LPDDR5', note:'' },
+          { label:'带宽', value:'51.2 GB/s', note:'理论峰值' }
+        ]
+      },
+      cpu: { x:380, y:90, w:200, h:85, label:'Safety Cluster', sub:'Cortex-R5F + A78AE', color:'#e0f2f1',
+        desc:'安全计算集群，R5F(锁步)+A78AE(实时)',
+        params: [
+          { label:'实时核', value:'A78AE ×8', note:'Cortex-A78AE' },
+          { label:'安全核', value:'R5F ×2', note:'锁步' }
+        ]
+      },
+      isp: { x:380, y:190, w:200, h:60, label:'ISP', sub:'Image Signal Processor', color:'#ede7f6',
+        desc:'图像信号处理器，最高支持12路摄像头输入',
+        params: [
+          { label:'输入', value:'12路', note:'最高' },
+          { label:'分辨率', value:'8MP@30fps', note:'每路' }
+        ]
+      },
+      if: { x:380, y:265, w:200, h:55, label:'Interfaces', sub:'PCIe Gen5 / ETH', color:'#e3f2fd',
+        desc:'对外高速接口',
+        params: [
+          { label:'PCIe', value:'Gen5 ×16', note:'高速' },
+          { label:'以太网', value:'10GbE', note:'多路' }
+        ]
+      }
+    },
+    buses: []
+  },
+  flex: {
+    name: 'FlexNPU (创新方案)',
+    stats: [
+      { value: '384 TOPS', label: 'INT8 峰值' },
+      { value: '1MB', label: 'Scratchpad' },
+      { value: 'FPGA', label: '平台' },
+      { value: '可重构', label: 'MAC阵列' }
+    ],
+    modules: {
+      scratch: { x:20, y:10, w:260, h:65, label:'Scratchpad SRAM', sub:'1MB Tiling Buffer', color:'#fff3e0',
+        desc:'1MB Scratchpad SRAM，用于FlashAttention的Tiling缓存，K/V块在片上复用',
+        params: [
+          { label:'容量', value:'1MB', note:'双端口' },
+          { label:'用途', value:'Attention Tiling', note:'K/V复用' },
+          { label:'延迟', value:'1 cycle', note:'确定性' }
+        ]
+      },
+      systolic: { x:20, y:90, w:260, h:130, label:'FSA Systolic Array', sub:'FlashAttention Hardware', color:'#fce4ec',
+        desc:'基于FSA（FlashAttention Systolic Architecture）的脉动阵列，原生支持FlashAttention算法，Attention利用率从25%提升至70%',
+        params: [
+          { label:'阵列规模', value:'32×32→64×64', note:'FPGA可重构' },
+          { label:'FlashAttn', value:'IO-Aware', note:'Tiling+Kernel融合' },
+          { label:'有效OI', value:'100-1500', note:'vs 原始5-15' },
+          { label:'利用率(BEV)', value:'~70%', note:'vs 通用MAC 25%' }
+        ]
+      },
+      reconf: { x:20, y:235, w:260, h:65, label:'Reconfigurable MAC', sub:'16×16 / 32×32 / 64×64', color:'#e8f5e9',
+        desc:'FPGA可重构MAC阵列，运行时动态切换不同矩阵规模',
+        params: [
+          { label:'模式', value:'3种', note:'16²/32²/64²' },
+          { label:'切换延迟', value:'<1μs', note:'部分重配置' },
+          { label:'适用场景', value:'CNN/Attn/MLP', note:'按需配置' }
+        ]
+      },
+      seq: { x:20, y:315, w:260, h:55, label:'FlexCompiler', sub:'MLIR Codegen', color:'#fff8e1',
+        desc:'基于MLIR的编译器，自动将计算图编译为FlexNPU微码',
+        params: [
+          { label:'编译框架', value:'MLIR', note:'多级IR' },
+          { label:'优化Pass', value:'Tiling+Fusion', note:'自动' }
+        ]
+      },
+      noc: { x:300, y:90, w:60, h:190, label:'AXI NoC', sub:'SmartConnect', color:'#f5f5f5',
+        desc:'AXI总线互连，基于Xilinx SmartConnect',
+        params: [
+          { label:'协议', value:'AXI4', note:'主从互连' },
+          { label:'带宽', value:'~256 GB/s', note:'内部' }
+        ]
+      },
+      ddr: { x:380, y:10, w:200, h:65, label:'DDR Controller', sub:'FPGA MIG', color:'#efebe9',
+        desc:'FPGA DDR内存控制器',
+        params: [
+          { label:'平台', value:'PolarFire SoC', note:'Microchip' },
+          { label:'DDR', value:'LPDDR4X', note:'车规FPGA' }
+        ]
+      },
+      riscv: { x:380, y:90, w:200, h:85, label:'CVA6 RISC-V', sub:'Linux-capable Core', color:'#e0f2f1',
+        desc:'CVA6 (Ariane) RISC-V处理器核心，运行Linux+调度',
+        params: [
+          { label:'核心', value:'CVA6', note:'64-bit RVGC' },
+          { label:'用途', value:'控制+调度', note:'Linux-capable' }
+        ]
+      },
+      hf: { x:380, y:190, w:200, h:60, label:'FlexAuto', sub:'Hugging Face Hub', color:'#ede7f6',
+        desc:'算法库，直接对接Hugging Face模型Hub，自动下载+编译+部署',
+        params: [
+          { label:'模型库', value:'HF Hub', note:'100K+模型' },
+          { label:'自动部署', value:'一键', note:'下载→编译→运行' }
+        ]
+      },
+      fpga: { x:380, y:265, w:200, h:55, label:'FPGA Fabric', sub:'PolarFire SoC MPFS250T', color:'#e3f2fd',
+        desc:'Microchip PolarFire SoC FPGA，车规级，辐射加固',
+        params: [
+          { label:'逻辑单元', value:'250K LE', note:'中等规模' },
+          { label:'车规', value:'AEC-Q100', note:'Grade 1/2' }
+        ]
+      }
+    },
+    buses: []
+  }
+};
+
+let currentChip = 'tesla';
+let activeModule = null;
+
+// ── Render Chip Tabs ──
+function renderTabs() {
+  const tabs = document.getElementById('chipTabs');
+  tabs.innerHTML = '';
+  Object.keys(chips).forEach(key => {
+    const btn = document.createElement('button');
+    btn.className = 'chip-tab' + (key === currentChip ? ' active' : '');
+    btn.textContent = chips[key].name;
+    btn.onclick = () => { currentChip = key; activeModule = null; render(); };
+    tabs.appendChild(btn);
+  });
+}
+
+// ── Render Stats ──
+function renderStats() {
+  const el = document.getElementById('chipStats');
+  el.innerHTML = chips[currentChip].stats.map(s =>
+    `<div class="chip-stat"><div class="chip-stat-value">${s.value}</div><div class="chip-stat-label">${s.label}</div></div>`
+  ).join('');
+}
+
+// ── Render Architecture SVG ──
+function renderArch() {
+  const svg = document.getElementById('archSvg');
+  const chip = chips[currentChip];
+  let html = '';
+
+  // Render buses first (behind modules)
+  if (chip.buses) {
+    chip.buses.forEach((b, i) => {
+      html += `<path class="bus-line" id="bus-${i}" d="${b.path}" marker-end="url(#arrow)"/>`;
+    });
+  }
+
+  // Arrow marker
+  html += `<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="bus-arrow" d="M 0 0 L 10 5 L 0 10 z"/></marker></defs>`;
+
+  // Render modules
+  Object.keys(chip.modules).forEach(key => {
+    const m = chip.modules[key];
+    const isActive = activeModule === key;
+    html += `<g class="module${isActive ? ' active' : ''}" data-key="${key}" onclick="selectModule('${key}')">
+      <rect class="module-bg" x="${m.x}" y="${m.y}" width="${m.w}" height="${m.h}" fill="${m.color}" stroke="${isActive ? '#0071e3' : '#e5e5ea'}" stroke-width="${isActive ? 2.5 : 1}"/>
+      <text class="module-label" x="${m.x + m.w/2}" y="${m.y + m.h/2 - 6}">${m.label}</text>
+      ${m.sub ? `<text class="module-sublabel" x="${m.x + m.w/2}" y="${m.y + m.h/2 + 10}">${m.sub}</text>` : ''}
+    </g>`;
+  });
+
+  // Right side info section
+  html += `<text x="620" y="30" font-family="-apple-system,sans-serif" font-size="11" font-weight="600" fill="#86868b">DATA FLOW</text>`;
+  html += `<text x="620" y="48" font-family="-apple-system,sans-serif" font-size="10" fill="#aeaeb2">DDR → SRAM → MAC → Post</text>`;
+
+  // Data flow visualization
+  const flowSteps = ['DDR → DMA', 'DMA → SRAM', 'SRAM → MAC', 'MAC → Activation', 'Activation → Post'];
+  flowSteps.forEach((step, i) => {
+    html += `<rect x="620" y="${60 + i*28}" width="190" height="24" rx="12" fill="#f5f5f7" class="flow-step" data-step="${i}"/>`;
+    html += `<text x="715" y="${60 + i*28 + 16}" font-family="-apple-system,sans-serif" font-size="10" fill="#6e6e73" text-anchor="middle">${step}</text>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+// ── Select Module ──
+function selectModule(key) {
+  activeModule = activeModule === key ? null : key;
+  renderArch();
+  renderDetail();
+  highlightBuses(key);
+}
+
+// ── Highlight Connected Buses ──
+function highlightBuses(key) {
+  const chip = chips[currentChip];
+  if (!chip.buses) return;
+  chip.buses.forEach((b, i) => {
+    const el = document.getElementById('bus-' + i);
+    if (el && (b.from === key || b.to === key)) {
+      el.classList.add('active');
+    } else if (el) {
+      el.classList.remove('active');
+    }
+  });
+}
+
+// ── Render Detail Panel ──
+function renderDetail() {
+  const panel = document.getElementById('detailPanel');
+  if (!activeModule) {
+    panel.className = 'detail-panel empty';
+    panel.innerHTML = '👆 点击上方架构图中的模块查看详细信息';
+    return;
+  }
+  const m = chips[currentChip].modules[activeModule];
+  panel.className = 'detail-panel';
+  let paramsHtml = '';
+  if (m.params) {
+    paramsHtml = '<div class="detail-params">' + m.params.map(p =>
+      `<div class="detail-param">
+        <div class="detail-param-label">${p.label}</div>
+        <div class="detail-param-value">${p.value}</div>
+        ${p.note ? `<div class="detail-param-note">${p.note}</div>` : ''}
+      </div>`
+    ).join('') + '</div>';
+  }
+  panel.innerHTML = `<div class="detail-title">${m.label}</div><div class="detail-desc">${m.desc}</div>${paramsHtml}`;
+}
+
+// ── Render All ──
+function render() {
+  renderTabs();
+  renderStats();
+  renderArch();
+  renderDetail();
+}
+
+// ── Initialize ──
+render();
+</script>
+</body>
+</html>

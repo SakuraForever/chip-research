@@ -1,0 +1,19 @@
+# Source files (large)
+_src/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+
+# Temp
+*.tmp
+*.bak
